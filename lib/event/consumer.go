@@ -53,7 +53,7 @@ func (consumer *Consumer) Listen(f func(b []byte)) error {
 		err = ch.QueueBind(
 			q.Name,
 			s,
-			getExchangeName(),
+			consumer.exchangeName,
 			false,
 			nil,
 		)
