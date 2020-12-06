@@ -1,8 +1,6 @@
 package event
 
 import (
-	"log"
-
 	"github.com/streadway/amqp"
 )
 
@@ -41,7 +39,7 @@ func (e *Emitter) Publish(exchange string,topic string, message string) error {
 			Body:        []byte(message),
 		},
 	)
-	log.Printf("Sending message: %s -> %s", message, exchange)
+	//log.Printf("Sending message: %s -> %s", message, exchange)
 	return nil
 }
 
