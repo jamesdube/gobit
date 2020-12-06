@@ -76,7 +76,7 @@ func (consumer *Consumer) Listen(f func(b []byte)) error {
 		}
 	}()
 
-	log.Printf("[*] Waiting for message [Exchange, Queue][%s, %s]. To exit press CTRL+C", getExchangeName(), q.Name)
+	log.Printf("[*] Waiting for message [Exchange, Queue][%s, %s]. To exit press CTRL+C", consumer.exchangeName, q.Name)
 	<-forever
 	return nil
 }
