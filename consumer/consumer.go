@@ -16,7 +16,7 @@ func main() {
 
 	topics := []string{"info"}
 
-	consumer, err := event.NewConsumer("logs_topic",topics,"info",connection)
+	consumer, err := event.NewConsumer("klkl",topics,"info",connection)
 	if err != nil {
 		panic(err)
 	}
