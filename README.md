@@ -5,7 +5,7 @@ A simple Rabbitmq client written in go
 ## Getting Started
 
 ```shell
-    go get "github.com/jamesdube/gobit/"
+    go get github.com/jamesdube/gobit/
 ```
 
 
