@@ -5,6 +5,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log/slog"
 )
+
 var logger = slog.Default()
 
 func main() {
@@ -17,7 +18,8 @@ func main() {
 
 	topics := []string{"sms.econet", "sms.netone"}
 
-	consumer, err := event.NewConsumer(connection,"sms", topics, "sms", true)
+	consumer, err := event.NewConsumer(connection, "sms", topics, "sms", true)
+	consumer.SetPrefetchCount(7)
 	if err != nil {
 		panic(err)
 	}
