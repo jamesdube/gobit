@@ -30,7 +30,7 @@ func TestEmitterPushSuccess(t *testing.T) {
 		t.Errorf("Error creating Event Emitter: %v", err)
 	}
 
-	err = emitter.Push("Hello World!", "INFO")
+	err = emitter.Publish("amqp.default", "Hello World!", "INFO")
 	if err != nil {
 		t.Errorf("Could not push to queue successfully: %v", err)
 	}

@@ -1,17 +1,17 @@
 package event
 
 import (
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func getExchangeName() string {
 	return "logs_topic"
 }
 
-func declareQueue(ch *amqp.Channel,q string) (amqp.Queue, error) {
+func declareQueue(ch *amqp.Channel,name string, durable bool) (amqp.Queue, error) {
 	return ch.QueueDeclare(
-		q,    // name
-		false, // durable
+		name,    // name
+		durable, // durable
 		false, // delete when unused
 		false,  // exclusive
 		false, // no-wait

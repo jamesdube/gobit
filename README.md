@@ -11,17 +11,53 @@ A simple Rabbitmq client written in go
 
 ### Usage
 
-This is an example
+This is a publisher example
 
 ```go
 
 package main
 
 import (
-	"github.com/jamesdube/gobit/lib/event"
-	"github.com/streadway/amqp"
-	"log"
+"fmt"
+"github.com/jamesdube/gobit/lib/event"
+amqp "github.com/rabbitmq/amqp091-go"
+"log/slog"
 )
+
+func main() {
+	logger := slog.Default()
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
+	if err != nil {
+		panic(err)
+	}
+
+	emitter, err := event.NewEventEmitter(conn)
+	if err != nil {
+		panic(err)
+	}
+
+	for i := 1; i < 10; i++ {
+		err := emitter.Publish("sms", "sms.econet", fmt.Sprintf("message number [%d]", i))
+		if err != nil {
+			return
+		}
+		logger.Info("published message", "id", i)
+	}
+}
+```
+
+This is a consumer example
+
+```go
+
+package main
+
+import (
+"github.com/jamesdube/gobit/lib/event"
+amqp "github.com/rabbitmq/amqp091-go"
+"log/slog"
+)
+var logger = slog.Default()
 
 func main() {
 
@@ -31,15 +67,23 @@ func main() {
 	}
 	defer connection.Close()
 
-	topics := []string{"my-topic"}
+	topics := []string{"sms.econet", "sms.netone"}
 
-	consumer, err := event.NewConsumer("my-exchange",topics,"info",connection)
+	consumer, err := event.NewConsumer(connection,"sms", topics, "sms", true)
 	if err != nil {
 		panic(err)
 	}
-	consumer.Listen(func(b []byte) {
-		log.Printf("Received a message: %s", b)
-	})
+
+	err = consumer.Listen(onMessageReceived)
+	if err != nil {
+		logger.Error("consumer error", "error", err.Error())
+		return
+	}
+}
+
+func onMessageReceived(b []byte) error {
+	logger.Info("received message", "message", string(b))
+	return nil
 }
 
 ```

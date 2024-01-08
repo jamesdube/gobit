@@ -1,7 +1,8 @@
 package event
 
 import (
-	"github.com/streadway/amqp"
+	"context"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // Emitter for publishing AMQP events
@@ -29,7 +30,8 @@ func (e *Emitter) Publish(exchange string,topic string, message string) error {
 
 	defer channel.Close()
 
-	err = channel.Publish(
+	err = channel.PublishWithContext(
+		context.Background(),
 		exchange,
 		topic,
 		false,
@@ -37,6 +39,7 @@ func (e *Emitter) Publish(exchange string,topic string, message string) error {
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        []byte(message),
+			DeliveryMode: 2,
 		},
 	)
 	//log.Printf("Sending message: %s -> %s", message, exchange)
@@ -49,7 +52,7 @@ func NewEventEmitter(conn *amqp.Connection) (Emitter, error) {
 	emitter := Emitter{
 		connection: conn,
 	}
-
+	
 	err := emitter.setup()
 	if err != nil {
 		return Emitter{}, err
