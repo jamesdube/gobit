@@ -2,18 +2,18 @@ package event
 
 import (
 	"github.com/google/uuid"
-	"log/slog"
-
 	amqp "github.com/rabbitmq/amqp091-go"
+	"log/slog"
 )
 
 // Consumer for receiving AMPQ events
 type Consumer struct {
-	conn         *amqp.Connection
-	exchangeName string
-	topics       []string
-	queueName    string
-	durable		 bool
+	conn          *amqp.Connection
+	exchangeName  string
+	topics        []string
+	queueName     string
+	durable       bool
+	prefetchCount int
 }
 
 var logger = slog.Default()
@@ -27,9 +27,9 @@ func (consumer *Consumer) setup() error {
 }
 
 // NewConsumer returns a new Consumer
-func NewConsumer(conn *amqp.Connection,exchange string, topics []string, queue string, durable bool) (Consumer, error) {
+func NewConsumer(conn *amqp.Connection, exchange string, topics []string, queue string, durable bool) (Consumer, error) {
 	consumer := Consumer{
-		conn: conn, exchangeName: exchange, topics: topics, queueName: queue,durable: durable,
+		conn: conn, exchangeName: exchange, topics: topics, queueName: queue, durable: durable,
 	}
 	err := consumer.setup()
 	if err != nil {
@@ -37,6 +37,10 @@ func NewConsumer(conn *amqp.Connection,exchange string, topics []string, queue s
 	}
 
 	return consumer, nil
+}
+
+func (consumer *Consumer) SetPrefetchCount(count int) {
+	consumer.prefetchCount = count
 }
 
 // Listen will listen for all new Queue publications
@@ -48,7 +52,7 @@ func (consumer *Consumer) Listen(f func(b []byte) error) error {
 	}
 	defer ch.Close()
 
-	q, err := declareQueue(ch, consumer.queueName,consumer.durable)
+	q, err := declareQueue(ch, consumer.queueName, consumer.durable)
 	if err != nil {
 		return err
 	}
@@ -67,13 +71,11 @@ func (consumer *Consumer) Listen(f func(b []byte) error) error {
 		}
 	}
 
+	err = ch.Qos(consumer.prefetchCount, 0, false)
 	if err != nil {
 		return err
 	}
 
-	if err != nil {
-		return err
-	}
 	tag := uuid.NewString()
 	msgs, err := ch.Consume(q.Name, tag, false, false, false, false, nil)
 	if err != nil {
