@@ -86,39 +86,21 @@ func (consumer *Consumer) Listen(f func(b []byte) error) error {
 
 	go func() {
 		for delivery := range msgs {
-			d := delivery
-//			go func() {
-				err := f(d.Body)
+			err := f(delivery.Body)
+			if err != nil {
+				err := delivery.Nack(true, true)
 				if err != nil {
-					err := d.Nack(true, true)
-					if err != nil {
-						logger.Error("error on nack on goroutine","error",err.Error())
-					}
-
-				}
-				err = d.Ack(true)
-				if err != nil {
-					logger.Error("error on ack in goroutine", "error", err.Error())
+					logger.Error("error on ack", "error", err.Error())
 					return
 				}
-//			}()
+				return
+			}
 
-
-//			err := f(delivery.Body)
-//			if err != nil {
-//				err := delivery.Nack(true, true)
-//				if err != nil {
-//					logger.Error("error on ack", "error", err.Error())
-//					return
-//				}
-//				return
-//			}
-//
-//			err = delivery.Ack(true)
-//			if err != nil {
-//				logger.Error("error on ack", "error", err.Error())
-//				return
-//			}
+			err = delivery.Ack(true)
+			if err != nil {
+				logger.Error("error on ack", "error", err.Error())
+				return
+			}
 		}
 	}()
 	<-forever
