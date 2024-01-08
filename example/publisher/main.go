@@ -20,8 +20,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("3")
-	for i := 1; i < 100000000000; i++ {
+	for i := 1; i < 100; i++ {
 		err := emitter.Publish("sms", "sms.econet", fmt.Sprintf("message number [%d]", i))
 		if err != nil {
 			return
