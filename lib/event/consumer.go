@@ -82,7 +82,7 @@ func (consumer *Consumer) Listen(f func(b []byte) error) error {
 
 	forever := make(chan bool)
 
-	logger.Info("started rabbitmq consumer, waiting for messages.", "tag", tag, "exchange", consumer.exchangeName, "queue", q.Name)
+	logger.Info("started rabbitmq consumer.", "tag", tag, "exchange", consumer.exchangeName, "queue", q.Name)
 
 	go func() {
 		for delivery := range msgs {
