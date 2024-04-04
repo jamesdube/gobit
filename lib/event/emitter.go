@@ -37,8 +37,8 @@ func (e *Emitter) Publish(exchange string,topic string, message string) error {
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(message),
+			ContentType:  "application/json",
+			Body:         []byte(message),
 			DeliveryMode: 2,
 		},
 	)
