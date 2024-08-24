@@ -14,6 +14,7 @@ type Consumer struct {
 	queueName     string
 	durable       bool
 	prefetchCount int
+	logger        *slog.Logger
 }
 
 var logger = slog.Default()
@@ -43,9 +44,18 @@ func (consumer *Consumer) SetPrefetchCount(count int) {
 	consumer.prefetchCount = count
 }
 
+func (consumer *Consumer) SetLogger(logger *slog.Logger) {
+	consumer.logger = logger
+}
+
 // Listen will listen for all new Queue publications
 // and print them to the console.
 func (consumer *Consumer) Listen(f func(b []byte) error) error {
+
+	if consumer.logger == nil {
+		consumer.logger = slog.Default()
+	}
+
 	ch, err := consumer.conn.Channel()
 	if err != nil {
 		return err
@@ -84,7 +94,7 @@ func (consumer *Consumer) Listen(f func(b []byte) error) error {
 
 	forever := make(chan bool)
 
-	logger.Info("started rabbitmq consumer.", "tag", tag, "exchange", consumer.exchangeName, "queue", q.Name)
+	consumer.logger.Info("started rabbitmq consumer.", "tag", tag, "exchange", consumer.exchangeName, "queue", q.Name)
 
 	go func() {
 		for delivery := range msgs {
@@ -100,7 +110,7 @@ func (consumer *Consumer) Listen(f func(b []byte) error) error {
 
 			err = delivery.Ack(true)
 			if err != nil {
-				logger.Error("error on ack", "error", err.Error())
+				consumer.logger.Error("error on ack", "error", err.Error())
 				return
 			}
 		}

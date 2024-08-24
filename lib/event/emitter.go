@@ -17,12 +17,12 @@ func (e *Emitter) setup() error {
 	}
 
 	defer channel.Close()
-	return declareExchange(channel,"logs_topic")
+	return declareExchange(channel, "logs_topic")
 }
 
 // Push (Publish) a specified message to the AMQP exchange
 
-func (e *Emitter) Publish(exchange string,topic string, message string) error {
+func (e *Emitter) Publish(exchange string, topic string, message string) error {
 	channel, err := e.connection.Channel()
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func NewEventEmitter(conn *amqp.Connection) (Emitter, error) {
 	emitter := Emitter{
 		connection: conn,
 	}
-	
+
 	err := emitter.setup()
 	if err != nil {
 		return Emitter{}, err
