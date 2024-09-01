@@ -8,10 +8,12 @@ import (
 // Emitter for publishing AMQP events
 type Emitter struct {
 	connection *amqp.Connection
+	channel    *amqp.Channel
 }
 
 func (e *Emitter) setup() error {
 	channel, err := e.connection.Channel()
+	e.channel = channel
 	if err != nil {
 		panic(err)
 	}
@@ -23,14 +25,10 @@ func (e *Emitter) setup() error {
 // Push (Publish) a specified message to the AMQP exchange
 
 func (e *Emitter) Publish(exchange string, topic string, message string) error {
-	channel, err := e.connection.Channel()
-	if err != nil {
-		return err
-	}
-
+	channel := e.channel
 	defer channel.Close()
 
-	err = channel.PublishWithContext(
+	err := channel.PublishWithContext(
 		context.Background(),
 		exchange,
 		topic,
@@ -43,7 +41,7 @@ func (e *Emitter) Publish(exchange string, topic string, message string) error {
 		},
 	)
 	//log.Printf("Sending message: %s -> %s", message, exchange)
-	return nil
+	return err
 }
 
 // NewEventEmitter returns a new event.Emitter object
