@@ -5,7 +5,7 @@ import (
 	"github.com/jamesdube/gobit/lib/event"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log/slog"
-//	"time"
+	//	"time"
 )
 
 func main() {
@@ -23,9 +23,10 @@ func main() {
 	for i := 1; i < 100; i++ {
 		err := emitter.Publish("sms", "sms.econet", fmt.Sprintf("message number [%d]", i))
 		if err != nil {
+			logger.Info("error", err.Error())
 			return
 		}
 		logger.Info("published message", "id", i)
-//		time.Sleep(100 * time.Millisecond)
+		//		time.Sleep(100 * time.Millisecond)
 	}
 }

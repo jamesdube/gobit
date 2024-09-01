@@ -26,7 +26,7 @@ func (e *Emitter) setup() error {
 
 func (e *Emitter) Publish(exchange string, topic string, message string) error {
 	channel := e.channel
-	defer channel.Close()
+	//defer channel.Close()
 
 	err := channel.PublishWithContext(
 		context.Background(),
