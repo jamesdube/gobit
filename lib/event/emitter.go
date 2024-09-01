@@ -18,7 +18,7 @@ func (e *Emitter) setup() error {
 		panic(err)
 	}
 
-	defer channel.Close()
+	//defer channel.Close()
 	return declareExchange(channel, "logs_topic")
 }
 
