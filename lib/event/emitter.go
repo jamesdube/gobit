@@ -25,8 +25,15 @@ func (e *Emitter) setup() error {
 // Push (Publish) a specified message to the AMQP exchange
 
 func (e *Emitter) Publish(exchange string, topic string, message string) error {
-	channel := e.channel
-	//defer channel.Close()
+
+	var channel = e.channel
+	if channel.IsClosed() {
+		newChan, err := e.connection.Channel()
+		if err != nil {
+			return err
+		}
+		channel = newChan
+	}
 
 	err := channel.PublishWithContext(
 		context.Background(),
