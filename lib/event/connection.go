@@ -236,6 +236,11 @@ func (cm *ConnectionManager) IsConnected() bool {
 
 // RetryWithBackoff executes a function with retry logic and exponential backoff
 func RetryWithBackoff(ctx context.Context, config ConnectionConfig, logger *slog.Logger, operation func() error) error {
+	// Use background context if no context is provided
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	retryInterval := config.RetryInterval
 
 	for i := 0; i < config.MaxRetries; i++ {

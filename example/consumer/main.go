@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/jamesdube/gobit/lib/event"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"log/slog"
 )
 
@@ -10,15 +9,15 @@ var logger = slog.Default()
 
 func main() {
 
-	connection, err := amqp.Dial("amqp://guest:guest@localhost:5672")
+	connManager, err := event.NewConnectionManagerFromURL("amqp://guest:guest@localhost:5672")
 	if err != nil {
 		panic(err)
 	}
-	defer connection.Close()
+	defer connManager.Close()
 
 	topics := []string{"sms.econet", "sms.netone"}
 
-	consumer, err := event.NewConsumer(connection, "sms", topics, "sms", true)
+	consumer, err := event.NewConsumer(connManager, "sms", topics, "sms", true)
 	consumer.SetPrefetchCount(7)
 	if err != nil {
 		panic(err)

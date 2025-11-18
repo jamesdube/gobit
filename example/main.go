@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,7 +12,7 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.Handler{Level: slog.LevelDebug}))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	// Create connection manager with custom configuration
 	config := event.DefaultConnectionConfig()

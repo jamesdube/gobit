@@ -3,19 +3,20 @@ package main
 import (
 	"fmt"
 	"github.com/jamesdube/gobit/lib/event"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"log/slog"
 	//	"time"
 )
 
 func main() {
 	logger := slog.Default()
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
+
+	connManager, err := event.NewConnectionManagerFromURL("amqp://guest:guest@localhost:5672")
 	if err != nil {
 		panic(err)
 	}
+	defer connManager.Close()
 
-	emitter, err := event.NewEventEmitter(conn)
+	emitter, err := event.NewEventEmitter(connManager)
 	if err != nil {
 		panic(err)
 	}
@@ -23,7 +24,7 @@ func main() {
 	for i := 1; i < 100; i++ {
 		err := emitter.Publish("sms", "sms.econet", fmt.Sprintf("message number [%d]", i))
 		if err != nil {
-			logger.Info("error", err.Error())
+			logger.Info("error", "err", err.Error())
 			return
 		}
 		logger.Info("published message", "id", i)
