@@ -1,0 +1,17 @@
+name: gobit
+
+on:
+  gollum:
+  pull_request:
+  push:
+    branches:
+      - master
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  gobit:
+    uses: scape-labs/ci-actions/.github/workflows/ci-workflow-library-go.yaml@main
