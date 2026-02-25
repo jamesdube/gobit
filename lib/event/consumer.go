@@ -212,8 +212,12 @@ func (consumer *Consumer) listenOnce(f func(b []byte) error) error {
 
 	consumer.logger.Debug("started rabbitmq consumer.", "tag", tag, "exchange", consumer.exchangeName, "queue", q.Name)
 
-	// Handle connection close notification
-	connCloseChan := consumer.connManager.conn.NotifyClose(make(chan *amqp.Error, 1))
+	// Handle connection close notification — use GetConnection() to avoid data race
+	conn, err := consumer.connManager.GetConnection()
+	if err != nil {
+		return err
+	}
+	connCloseChan := conn.NotifyClose(make(chan *amqp.Error, 1))
 	chCloseChan := ch.NotifyClose(make(chan *amqp.Error, 1))
 
 	for {

@@ -2,6 +2,8 @@ package event
 
 import (
 	"context"
+	"sync"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log/slog"
 )
@@ -11,34 +13,58 @@ type Emitter struct {
 	connManager *ConnectionManager
 	config      ConnectionConfig
 	logger      *slog.Logger
+	mu          sync.Mutex
+	ch          *amqp.Channel
+	exchanges   map[string]bool // tracks declared exchanges on current channel
 }
 
 func (e *Emitter) setup() error {
-	channel, err := e.connManager.GetChannel()
+	// Validate that the connection manager can provide a channel
+	ch, err := e.connManager.GetChannel()
 	if err != nil {
 		return err
 	}
-	defer channel.Close()
-
-	return declareExchange(channel, "logs_topic")
+	e.ch = ch
+	return nil
 }
 
-// Push (Publish) a specified message to the AMQP exchange with retry logic
+// getChannel returns the persistent channel, creating a new one if needed.
+func (e *Emitter) getChannel() (*amqp.Channel, error) {
+	if e.ch != nil && !e.ch.IsClosed() {
+		return e.ch, nil
+	}
+	// Channel is nil or closed — get a fresh one
+	ch, err := e.connManager.GetChannel()
+	if err != nil {
+		return nil, err
+	}
+	e.ch = ch
+	e.exchanges = make(map[string]bool) // reset declared exchanges
+	return ch, nil
+}
+
+// Publish a message to the AMQP exchange with retry logic.
 func (e *Emitter) Publish(exchange string, topic string, message string) error {
 	return RetryWithBackoff(context.Background(), e.config, e.logger, func() error {
-		channel, err := e.connManager.GetChannel()
-		if err != nil {
-			return err
-		}
-		defer channel.Close()
+		e.mu.Lock()
+		defer e.mu.Unlock()
 
-		// Ensure exchange exists
-		err = declareExchange(channel, exchange)
+		ch, err := e.getChannel()
 		if err != nil {
 			return err
 		}
 
-		return channel.PublishWithContext(
+		// Declare exchange once per channel lifetime
+		if !e.exchanges[exchange] {
+			if err := declareExchange(ch, exchange); err != nil {
+				// Channel may be broken — force reset on next call
+				e.ch = nil
+				return err
+			}
+			e.exchanges[exchange] = true
+		}
+
+		err = ch.PublishWithContext(
 			context.Background(),
 			exchange,
 			topic,
@@ -50,6 +76,12 @@ func (e *Emitter) Publish(exchange string, topic string, message string) error {
 				DeliveryMode: 2,
 			},
 		)
+		if err != nil {
+			// Channel may be broken — force reset on next call
+			e.ch = nil
+			return err
+		}
+		return nil
 	})
 }
 
@@ -60,6 +92,7 @@ func NewEventEmitter(connManager *ConnectionManager) (Emitter, error) {
 		connManager: connManager,
 		config:      DefaultConnectionConfig(),
 		logger:      slog.Default(),
+		exchanges:   make(map[string]bool),
 	}
 
 	err := emitter.setup()
@@ -80,6 +113,7 @@ func NewEventEmitterWithConfig(connManager *ConnectionManager, config Connection
 		connManager: connManager,
 		config:      config,
 		logger:      logger,
+		exchanges:   make(map[string]bool),
 	}
 
 	err := emitter.setup()
@@ -90,8 +124,13 @@ func NewEventEmitterWithConfig(connManager *ConnectionManager, config Connection
 	return emitter, nil
 }
 
-// Close closes the emitter and its connection manager
+// Close closes the emitter's channel and its connection manager
 func (e *Emitter) Close() error {
+	e.mu.Lock()
+	if e.ch != nil && !e.ch.IsClosed() {
+		e.ch.Close()
+	}
+	e.mu.Unlock()
 	return e.connManager.Close()
 }
 
