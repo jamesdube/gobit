@@ -5,10 +5,6 @@ import (
 	"log/slog"
 )
 
-func getExchangeName() string {
-	return "logs_topic"
-}
-
 func declareQueue(ch *amqp.Channel, name string, durable bool) (amqp.Queue, error) {
 	return ch.QueueDeclare(
 		name,    // name
